@@ -45,4 +45,4 @@ You can include a screenshot of your game here to showcase the UI.
 
 🚀 Live Demo
 
-👉 Play it here
+👉  https://pathrabe2416.github.io/stone-paper-scissor/
