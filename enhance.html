@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETRO ROCK-PAPER-SCISSORS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000; color: #fff; font-family: 'Press Start 2P', cursive;
+            min-height: 100vh; overflow-x: hidden; position: relative;
+            background-image:
+                repeating-linear-gradient(0deg, #111 0px, transparent 1px, transparent 2px, #111 3px),
+                repeating-linear-gradient(90deg, #111 0px, transparent 1px, transparent 2px, #111 3px);
+            image-rendering: pixelated;
+        }
+        .crt::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, transparent 1px, transparent 2px, rgba(0,0,0,0.1) 3px);
+            pointer-events: none; z-index: 999; animation: flicker 4s infinite;
+        }
+        @keyframes flicker { 0%,100% {opacity:0.99;} 50% {opacity:0.95;} }
+        .container { text-align: center; padding: 20px; position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        h1 { font-size: 2.5rem; margin: 20px 0; text-shadow: 0 0 10px #ff00ff, 0 0 20px #00ffff, 0 0 40px #ff00ff; animation: glow 2s infinite alternate; }
+        @keyframes glow { from { text-shadow: 0 0 10px #ff00ff; } to { text-shadow: 0 0 30px #00ffff, 0 0 50px #ff00ff; } }
+        button {
+            font-family: 'Press Start 2P', cursive;
+            padding: 12px 20px;
+            margin: 8px;
+            border: 3px solid;
+            cursor: pointer;
+            box-shadow: 0 0 20px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            min-width: 140px;
+        }
+        button:hover { transform: scale(1.1); box-shadow: 0 0 40px; }
+        .mode-selection button {
+            background: #000; border-color: #00ffff; color: #00ffff; box-shadow: 0 0 20px #00ffff;
+        }
+        .mode-selection button:hover { background: #00ffff; color: #000; }
+        .back-btn {
+            background: #000; border-color: #ff00ff; color: #ff00ff; box-shadow: 0 0 20px #ff00ff;
+        }
+        .back-btn:hover { background: #ff00ff; color: #000; }
+        .new-game-btn {
+            background: #000; border-color: #00ff00; color: #00ff00; box-shadow: 0 0 20px #00ff00;
+        }
+        .new-game-btn:hover { background: #00ff00; color: #000; }
+        /* Responsive Button Container */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px auto;
+            padding: 0 10px;
+            max-width: 100%;
+        }
+        .choices { display: flex; justify-content: center; gap: 30px; margin: 40px 0; flex-wrap: wrap; padding: 0 10px; }
+        .choice { width: 120px; height: 120px; background: rgba(255,0,255,0.2); border: 5px solid #ff00ff; border-radius: 20px;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 20px #ff00ff; }
+        .choice:hover { transform: translateY(-15px) scale(1.15); box-shadow: 0 0 50px #ff00ff; border-color: #00ffff; }
+        .choice img { width: 80px; height: 80px; filter: drop-shadow(0 0 10px #00ffff); }
+        .score-board { display: flex; justify-content: center; gap: 50px; font-size: 1.3rem; margin: 20px 0; flex-wrap: wrap; }
+        .score-num { font-size: 2.8rem; display: block; text-shadow: 0 0 20px #00ffff; }
+        .msg { margin: 30px auto; padding: 15px 25px; background: rgba(0,255,255,0.2); border: 3px solid #00ffff;
+               display: inline-block; font-size: 1.2rem; min-height: 50px; box-shadow: 0 0 30px #00ffff; border-radius: 10px; max-width: 90%; }
+        .current-player { margin: 15px; font-size: 1.2rem; color: #ff00ff; text-shadow: 0 0 15px #ff00ff; }
+        .hidden { display: none; }
+        /* Mobile Fixes */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .choices { gap: 20px; }
+            .choice { width: 100px; height: 100px; }
+            .choice img { width: 65px; height: 65px; }
+            .score-board { gap: 30px; font-size: 1rem; }
+            .score-num { font-size: 2.2rem; }
+            button { font-size: 0.8rem; padding: 10px 16px; min-width: 120px; }
+            .msg { font-size: 1rem; padding: 12px 20px; }
+        }
+        @media (max-width: 480px) {
+            h1 { font-size: 1.5rem; }
+            .button-container { flex-direction: column; align-items: center; }
+            button { width: 80%; max-width: 300px; }
+        }
+    </style>
+</head>
+<body class="crt">
+    <div class="container">
+        <h1>ROCK • PAPER • SCISSORS</h1>
+        <!-- Mode Selection -->
+        <div id="modeSelection" class="mode-selection">
+            <p style="margin:30px; color:#00ffff; text-shadow: 0 0 10px;">SELECT GAME MODE</p>
+            <button onclick="startGame('pvc')">PLAYER VS COMPUTER</button>
+            <button onclick="startGame('pvp')">PLAYER 1 VS PLAYER 2</button>
+        </div>
+        <!-- Game Screen -->
+        <div id="gameScreen" class="game hidden">
+            <div class="current-player" id="currentPlayer"></div>
+            <div class="score-board">
+                <div class="player">
+                    <span>PLAYER 1</span>
+                    <span class="score-num" id="p1Score">0</span>
+                </div>
+                <div class="player">
+                    <span id="p2Label">COMPUTER</span>
+                    <span class="score-num" id="p2Score">0</span>
+                </div>
+            </div>
+            <div class="choices" id="choices">
+                <div class="choice" data-choice="Rock">
+                    <img src="https://img.icons8.com/color/96/000000/hand-rock.png" alt="Rock">
+                </div>
+                <div class="choice" data-choice="paper">
+                    <img src="https://img.icons8.com/color/96/000000/hand.png" alt="Paper">
+                </div>
+                <div class="choice" data-choice="scissor">
+                    <img src="https://img.icons8.com/color/96/000000/hand-scissors.png" alt="Scissors">
+                </div>
+            </div>
+            <div class="msg" id="msg">CHOOSE YOUR WEAPON!</div>
+            <!-- RESPONSIVE BUTTONS -->
+            <div class="button-container">
+                <button class="back-btn" onclick="backToMenu()">BACK TO MENU</button>
+                <button class="new-game-btn" onclick="resetGame()">NEW GAME</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ctx = new AudioContext();
+        function beep(f=300,d=100){
+            let o=ctx.createOscillator(), g=ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value=f; o.type="square";
+            g.gain.setValueAtTime(0.3,ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+d/1000);
+            o.start(); o.stop(ctx.currentTime+d/1000);
+        }
+        let gameMode=null, currentPlayer=1, p1Choice=null, p2Choice=null, scores={p1:0,p2:0};
+        const choicesDiv=document.getElementById('choices'), msg=document.getElementById('msg'),
+              p1ScoreEl=document.getElementById('p1Score'), p2ScoreEl=document.getElementById('p2Score'),
+              currentPlayerEl=document.getElementById('currentPlayer'), p2Label=document.getElementById('p2Label');
+        function startGame(m){ gameMode=m; document.getElementById('modeSelection').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            p2Label.textContent = m==='pvp'?"PLAYER 2":"COMPUTER";
+            currentPlayerEl.textContent = m==='pvp'?"PLAYER 1'S TURN":"YOUR TURN"; resetRound(); }
+        function backToMenu(){ beep(600,150);
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('modeSelection').classList.remove('hidden');
+            resetGame(); }
+        function resetGame(){ scores={p1:0,p2:0}; updateScores(); resetRound(); }
+        function resetRound(){
+            p1Choice=p2Choice=null; currentPlayer=1;
+            msg.textContent=gameMode==='pvp'?"PLAYER 1'S TURN":"CHOOSE YOUR WEAPON!";
+            msg.style.background="rgba(0,255,255,0.2)";
+            currentPlayerEl.textContent=gameMode==='pvp'?"PLAYER 1'S TURN":"YOUR TURN";
+            choicesDiv.style.pointerEvents="auto";
+        }
+        function getComputerChoice(){ return ["Rock","paper","scissor"][Math.floor(Math.random()*3)]; }
+        function determineWinner(c1,c2){
+            if(c1===c2)return"draw";
+            return (c1==="Rock"&&c2==="scissor")||(c1==="paper"&&c2==="Rock")||(c1==="scissor"&&c2==="paper")?"p1":"p2";
+        }
+        function playRound(c){
+            beep(400,100);
+            if(gameMode==='pvp'){
+                if(currentPlayer===1){ p1Choice=c; currentPlayer=2;
+                    currentPlayerEl.textContent="PLAYER 2'S TURN"; msg.textContent="PLAYER 2 CHOOSE!"; }
+                else{ p2Choice=c; choicesDiv.style.pointerEvents="none"; finalizeRound(p1Choice,p2Choice); }
+            }else{
+                p1Choice=c; p2Choice=getComputerChoice(); choicesDiv.style.pointerEvents="none";
+                setTimeout(()=>{ msg.textContent=`COMPUTER CHOSE ${p2Choice.toUpperCase()}!`; beep(800,200);
+                    setTimeout(()=>finalizeRound(p1Choice,p2Choice),1000);
+                },800);
+            }
+        }
+        function finalizeRound(c1,c2){
+            const w=determineWinner(c1,c2);
+            if(w==="draw"){ msg.textContent=`DRAW! BOTH CHOSE ${c1.toUpperCase()}`; msg.style.background="rgba(255,255,0,0.3)"; msg.style.borderColor="#ffff00"; beep(200,300); }
+            else if(w==="p1"){ scores.p1++; msg.textContent=`PLAYER 1 WINS! ${c1} beats ${c2}`; msg.style.background="rgba(0,255,0,0.4)"; msg.style.borderColor="#00ff00"; beep(1000,200); beep(1200,200); }
+            else{ scores.p2++; msg.textContent=`${gameMode==='pvp'?'PLAYER 2':'COMPUTER'} WINS! ${c2} beats ${c1}`; msg.style.background="rgba(255,0,0,0.4)"; msg.style.borderColor="#ff0066"; beep(300,400); }
+            updateScores(); setTimeout(resetRound,3000);
+        }
+        function updateScores(){ p1ScoreEl.textContent=scores.p1; p2ScoreEl.textContent=scores.p2; }
+        document.querySelectorAll('.choice').forEach(el=>el.addEventListener('click',()=>playRound(el.dataset.choice)));
+    </script>
+</body>
+</html>
