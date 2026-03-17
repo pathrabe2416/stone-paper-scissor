@@ -1,46 +1,65 @@
-# Retro Rock Paper Scissors - Web Game
+Rock · Paper · Scissors — Web Game
+🎮 A sleek, modern Rock Paper Scissors game built with pure HTML, CSS, and JavaScript.
+Featuring a deep-space dark UI, fluid neon glow effects, animated orbs, and real-time Web Audio sound feedback.
+Choose between Player vs AI or Player vs Player (pass-and-play) modes — and outsmart an AI that actually learns your patterns!
 
-🎮 A stylish, retro-themed Rock Paper Scissors game built with HTML, CSS, and JavaScript. 
-Featuring a cyberpunk CRT aesthetic, neon glows, flickering scanlines, and classic 8-bit beep sound effects. 
-Choose between **Player vs Computer** or **Player vs Player** (hotseat) modes for endless fun!
 
-## 🧠 Features
 
-- Two game modes: Player vs Computer & Player vs Player  
-- Authentic retro CRT screen effect with scanlines and subtle flicker animation  
-- Neon glowing text, buttons, and interactive choice highlights  
-- Pixel-perfect 8-bit font (Press Start 2P) for that arcade feel  
-- Retro square-wave beep sound effects on every action  
-- Real-time score tracking for both players  
-- Dynamic result messages with color-coded feedback (win/draw/lose)  
-- Fully responsive design – works great on mobile and desktop  
-- Back to Menu and New Game buttons for easy control  
 
-## 🛠️ Tech Stack
+🚀 Live Demo
+👉 (https://pathrabe2416.github.io/stone-paper-scissor/)
 
-- HTML5 – Structure and layout  
-- CSS3 – Retro styling, animations, glow effects, and responsiveness  
-- Vanilla JavaScript – Game logic, mode handling, sound effects, and DOM manipulation  
+🧠 Features
 
-## 🧩 How to Play
+Two game modes: Player vs AI & Player vs Player (same-device hotseat)
+Adaptive AI opponent that tracks your move history and counters your most frequent choice
+Animated glassmorphism UI with floating gradient orbs and a subtle dot-grid background
+Neon glowing score cards, result banners, and interactive choice highlights
+Fluid responsive layout using clamp() — scales beautifully from tiny phones to widescreen desktops
+Safe-area insets for notched / Dynamic Island devices
+Web Audio API sound effects — clicks, wins, losses, and draws, all synthesized in-browser
+Real-time round dot tracker showing the outcome of every played round
+Best-of-7 match format with a polished Game Over / Final Screen
+Quit confirmation modal with a live score preview before leaving mid-game
+Particle burst animations on every round result
+Full keyboard navigation and prefers-reduced-motion accessibility support
 
-1. Open the game in any modern browser (single file – no installation needed).  
-2. Select your preferred mode: **Player vs Computer** or **Player vs Player**.  
-3. Click one of the glowing choice boxes (Rock, Paper, or Scissors).  
-4. In PvP mode, players alternate turns; in PvC mode, the computer responds instantly.  
-5. View the result, hear the retro beep, and watch scores update.  
-6. Rounds automatically reset after 3 seconds – keep playing!  
 
-## 🎮 Game Rules
+🛠️ Tech Stack
 
-Classic Rock Paper Scissors rules apply:  
-- Rock beats Scissors  
-- Scissors beats Paper  
-- Paper beats Rock  
-- Same choice = Draw  
+HTML5 — Semantic structure and layout
+CSS3 — Glassmorphism, fluid type/spacing scale, keyframe animations, and responsive breakpoints
+Vanilla JavaScript — Game logic, AI prediction, Web Audio sound engine, and DOM state management
 
-## 🚀 Live Demo
 
-👉 https://pathrabe2416.github.io/stone-paper-scissor/
+🧩 How to Play
 
-Feel free to fork, star, or contribute! 🚀
+Open the game in any modern browser — single file, zero installation needed
+Select your mode: vs AI for a solo challenge or vs Player to battle a friend
+Click one of the glowing weapon cards — 🪨 Rock, 📄 Paper, or ✂️ Scissors
+In PvP mode, Player 1 picks secretly → device is passed → Player 2 picks → result is revealed
+In AI mode, the AI counters instantly based on your historical move frequency
+First to 4 wins (best of 7) takes the match — then rematch or head back to the menu
+
+
+🎮 Game Rules
+Classic Rock Paper Scissors — timeless and brutal:
+
+🪨 Rock crushes Scissors
+✂️ Scissors cuts Paper
+📄 Paper covers Rock
+Same choice = Draw
+
+
+🤖 AI Difficulty
+The AI isn't random. It runs a frequency-based prediction engine:
+
+Rounds 1–2: plays randomly to gather data
+Round 3+: identifies your most-played move and plays its counter
+The more you play the same move, the more it punishes you — mix it up!
+
+
+🚀 Live Demo
+👉 (your link here)
+
+Feel free to fork, star ⭐, or contribute! Pull requests are welcome. 🚀
