@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rock · Paper · Scissors</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ════════════════════════════════════════════
+     TOKENS & RESET
+  ════════════════════════════════════════════ */
+  :root {
+    --bg: #050814;
+    --surface: rgba(255,255,255,0.04);
+    --surface2: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --text: #f0f2ff;
+    --muted: rgba(240,242,255,0.45);
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --accent4: #f7b731;
+    --glow: rgba(108,99,255,0.4);
+    --win: #43e97b;
+    --lose: #ff6584;
+    --draw: #f7b731;
+    --r: 20px;
+
+    /* Fluid spacing scale */
+    --sp-xs: clamp(4px,  1vw,  8px);
+    --sp-sm: clamp(8px,  2vw, 12px);
+    --sp-md: clamp(12px, 2.5vw, 20px);
+    --sp-lg: clamp(20px, 4vw,  36px);
+    --sp-xl: clamp(28px, 5vw,  52px);
+
+    /* Fluid type scale */
+    --text-xs:  clamp(0.6rem,  1.5vw, 0.7rem);
+    --text-sm:  clamp(0.72rem, 1.8vw, 0.85rem);
+    --text-md:  clamp(0.85rem, 2vw,   1rem);
+    --text-lg:  clamp(1rem,    2.5vw, 1.2rem);
+    --text-xl:  clamp(1.2rem,  3vw,   1.6rem);
+    --text-hero:clamp(2rem,    7vw,   4.5rem);
+
+    /* Safe area support (notched phones) */
+    --safe-top:    env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left, 0px);
+    --safe-right:  env(safe-area-inset-right, 0px);
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport for mobile browsers */
+    overflow-x: hidden;
+    position: relative;
+    /* Safe area padding for notched/island devices */
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  /* ════════════════════════════════════════════
+     BACKGROUND LAYERS
+  ════════════════════════════════════════════ */
+  .bg-canvas {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108,99,255,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 90%, rgba(255,101,132,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(67,233,123,0.06) 0%, transparent 60%),
+      #050814;
+  }
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .orb {
+    position: fixed; border-radius: 50%;
+    filter: blur(80px); z-index: 0; pointer-events: none;
+    animation: orbFloat 12s ease-in-out infinite;
+    will-change: transform;
+  }
+  .orb-1 { width: clamp(200px,40vw,400px); height: clamp(200px,40vw,400px); background:rgba(108,99,255,0.15); top:-100px; left:-100px; animation-delay:0s; }
+  .orb-2 { width: clamp(180px,35vw,350px); height: clamp(180px,35vw,350px); background:rgba(255,101,132,0.1); bottom:-80px; right:-80px; animation-delay:-6s; }
+  .orb-3 { width: clamp(140px,25vw,250px); height: clamp(140px,25vw,250px); background:rgba(67,233,123,0.08); top:50%; left:60%; animation-delay:-3s; }
+  @keyframes orbFloat {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(30px,-20px) scale(1.05); }
+    66%      { transform: translate(-20px,15px) scale(0.95); }
+  }
+
+  /* ════════════════════════════════════════════
+     APP SHELL & LAYOUT
+  ════════════════════════════════════════════ */
+  .app {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0 clamp(12px, 4vw, 24px) clamp(24px, 5vw, 48px);
+  }
+
+  /* ════════════════════════════════════════════
+     HEADER
+  ════════════════════════════════════════════ */
+  .header {
+    width: 100%; max-width: 760px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: clamp(16px, 3vw, 28px) 0 0;
+    gap: 12px;
+  }
+  .logo {
+    font-size: clamp(1rem, 2.5vw, 1.1rem);
+    font-weight: 800; letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  .header-badge {
+    font-family: 'Syne Mono', monospace;
+    font-size: clamp(0.55rem, 1.5vw, 0.65rem);
+    color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: clamp(4px,1vw,6px) clamp(8px,2vw,12px);
+    border-radius: 99px;
+    letter-spacing: 0.08em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 50%;
+  }
+
+  /* ════════════════════════════════════════════
+     SCREENS
+  ════════════════════════════════════════════ */
+  .screen {
+    width: 100%; max-width: 760px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .screen.hidden { display: none !important; }
+
+  /* ════════════════════════════════════════════
+     HOME – HERO
+  ════════════════════════════════════════════ */
+  .hero-title {
+    text-align: center;
+    margin-top: clamp(28px, 5vw, 52px);
+    width: 100%;
+  }
+  .hero-eyebrow {
+    font-size: clamp(0.58rem, 1.5vw, 0.7rem);
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: clamp(10px,2vw,16px);
+    font-family: 'Syne Mono', monospace;
+  }
+  .hero-h1 {
+    font-size: var(--text-hero);
+    font-weight: 800; line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .hero-h1 span { display: block; }
+  .hero-h1 .word-rock    { color: #fff; }
+  .hero-h1 .word-paper   { background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-h1 .word-scissors{ color: var(--accent2); }
+  .hero-sub {
+    margin-top: clamp(12px,2.5vw,20px);
+    font-size: var(--text-sm); color: var(--muted);
+    text-align: center; line-height: 1.7;
+  }
+
+  /* Weapon Parade */
+  .weapon-parade {
+    display: flex; gap: clamp(16px,4vw,28px);
+    margin: clamp(28px,5vw,44px) 0 clamp(4px,1vw,10px);
+    justify-content: center;
+  }
+  .wp-item {
+    font-size: clamp(2rem,6vw,3rem);
+    animation: wpFloat 3s ease-in-out infinite;
+    cursor: default; user-select: none;
+    filter: drop-shadow(0 0 20px rgba(108,99,255,0.5));
+  }
+  .wp-item:nth-child(2){ animation-delay:-1s; filter:drop-shadow(0 0 20px rgba(255,101,132,0.5)); }
+  .wp-item:nth-child(3){ animation-delay:-2s; filter:drop-shadow(0 0 20px rgba(67,233,123,0.5)); }
+  @keyframes wpFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+
+  /* Mode Grid */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(10px, 2.5vw, 16px);
+    width: 100%;
+    margin-top: clamp(24px, 4vw, 44px);
+  }
+  .mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: clamp(14px,3vw,var(--r));
+    padding: clamp(20px, 4vw, 32px) clamp(16px, 3vw, 24px);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative; overflow: hidden;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .mode-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--c1,#6c63ff), var(--c2,#a78bfa));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .mode-card:hover  { transform: translateY(-6px) scale(1.02); border-color: var(--border2); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px var(--border2); }
+  .mode-card:hover::before { opacity: 0.08; }
+  .mode-card:active { transform: translateY(-2px) scale(1.0); }
+
+  .mode-card .mc-icon  { font-size: clamp(2rem,5vw,3rem); margin-bottom: clamp(10px,2vw,16px); display: block; position: relative; z-index:1; }
+  .mode-card .mc-title { font-size: clamp(0.9rem,2.2vw,1.05rem); font-weight: 700; margin-bottom: clamp(4px,1vw,8px); position: relative; z-index:1; }
+  .mode-card .mc-desc  { font-size: clamp(0.65rem,1.6vw,0.75rem); color: var(--muted); line-height: 1.6; position: relative; z-index:1; }
+  .mode-card.pvai { --c1:#6c63ff; --c2:#a78bfa; }
+  .mode-card.pvp  { --c1:#ff6584; --c2:#f7b731; }
+
+  /* ════════════════════════════════════════════
+     BUTTONS
+  ════════════════════════════════════════════ */
+  .btn {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    border: none; cursor: pointer;
+    border-radius: clamp(8px,2vw,12px);
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    letter-spacing: 0.02em; position: relative; overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn:hover::after { opacity:1; }
+  .btn:hover  { transform: translateY(-2px); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    color: #fff;
+    font-size: clamp(0.8rem,2vw,0.95rem);
+    padding: clamp(12px,2.5vw,16px) clamp(24px,5vw,40px);
+    box-shadow: 0 8px 32px rgba(108,99,255,0.4);
+    white-space: nowrap;
+  }
+  .btn-primary:hover { box-shadow: 0 12px 40px rgba(108,99,255,0.55); }
+
+  .btn-ghost {
+    background: var(--surface); color: var(--muted);
+    border: 1px solid var(--border);
+    font-size: clamp(0.75rem,2vw,0.85rem);
+    padding: clamp(10px,2vw,12px) clamp(18px,3.5vw,28px);
+    white-space: nowrap;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+
+  .btn-row {
+    display: flex; gap: clamp(8px,2vw,12px);
+    margin-top: clamp(20px,4vw,32px);
+    flex-wrap: wrap; justify-content: center;
+    width: 100%;
+  }
+
+  /* ════════════════════════════════════════════
+     QUIT MODAL
+  ════════════════════════════════════════════ */
+  .quit-overlay {
+    position: fixed; inset: 0; z-index: 900;
+    background: rgba(5,8,20,0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: flex; align-items: center; justify-content: center;
+    padding: clamp(16px,4vw,20px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .quit-overlay.show { opacity:1; pointer-events:auto; }
+
+  .quit-modal {
+    background: rgba(15,17,35,0.95);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: clamp(18px,4vw,28px);
+    padding: clamp(28px,5vw,40px) clamp(20px,5vw,36px) clamp(24px,4vw,36px);
+    width: 100%; max-width: 380px;
+    text-align: center;
+    position: relative;
+    transform: scale(0.88) translateY(16px);
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+    opacity: 0;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .quit-overlay.show .quit-modal { transform:scale(1) translateY(0); opacity:1; }
+  .quit-modal::before {
+    content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:60px; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius:0 0 4px 4px;
+  }
+  .quit-modal-icon { font-size:clamp(2.2rem,6vw,3.2rem); margin-bottom:16px; display:block; animation:iconWobble 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both; }
+  @keyframes iconWobble { from{transform:scale(0.5) rotate(-15deg);opacity:0;} to{transform:scale(1) rotate(0);opacity:1;} }
+  .quit-modal-title { font-size:clamp(1.1rem,3vw,1.35rem); font-weight:800; letter-spacing:-0.02em; margin-bottom:10px; }
+  .quit-modal-sub   { font-size:clamp(0.7rem,1.8vw,0.78rem); color:var(--muted); line-height:1.7; }
+
+  .quit-score-preview {
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    margin: clamp(14px,3vw,20px) 0 clamp(20px,4vw,28px);
+    padding: clamp(10px,2vw,14px) clamp(14px,3vw,20px);
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+  }
+  .qsp-side  { text-align:center; flex:1; }
+  .qsp-name  { font-size:clamp(0.55rem,1.4vw,0.6rem); color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:4px; font-family:'Syne Mono',monospace; }
+  .qsp-score { font-size:clamp(1.5rem,4vw,1.8rem); font-weight:800; line-height:1; }
+  .qsp-score.p1c { color:var(--win); }
+  .qsp-score.p2c { color:var(--lose); }
+  .qsp-divider   { font-size:0.65rem; font-weight:800; color:var(--muted); padding:0 4px; }
+
+  .quit-modal-btns { display:flex; gap:10px; flex-direction:column; }
+
+  .btn-quit-confirm {
+    width:100%; background:linear-gradient(135deg,#ff6584,#e8365d); color:#fff;
+    font-family:'Syne',sans-serif; font-weight:700;
+    font-size:clamp(0.82rem,2vw,0.9rem);
+    padding:clamp(12px,2.5vw,15px) 24px;
+    border:none; border-radius:12px; cursor:pointer; letter-spacing:0.04em;
+    transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 8px 28px rgba(232,54,93,0.35);
+    position:relative; overflow:hidden; touch-action:manipulation;
+  }
+  .btn-quit-confirm::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.12); opacity:0; transition:opacity 0.2s; }
+  .btn-quit-confirm:hover  { transform:translateY(-2px); box-shadow:0 12px 36px rgba(232,54,93,0.5); }
+  .btn-quit-confirm:hover::after { opacity:1; }
+  .btn-quit-confirm:active { transform:scale(0.97); }
+
+  .btn-quit-cancel {
+    width:100%; background:rgba(255,255,255,0.05); color:var(--muted);
+    font-family:'Syne',sans-serif; font-weight:600;
+    font-size:clamp(0.8rem,2vw,0.88rem);
+    padding:clamp(11px,2.5vw,14px) 24px;
+    border:1px solid rgba(255,255,255,0.1); border-radius:12px; cursor:pointer;
+    letter-spacing:0.03em; transition:all 0.25s ease; touch-action:manipulation;
+  }
+  .btn-quit-cancel:hover { background:rgba(255,255,255,0.09); color:var(--text); border-color:rgba(255,255,255,0.2); transform:translateY(-1px); }
+  .btn-quit-cancel:active { transform:scale(0.97); }
+
+  /* ════════════════════════════════════════════
+     SCOREBOARD
+  ════════════════════════════════════════════ */
+  .scoreboard {
+    width:100%; display:grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: clamp(8px,2vw,12px);
+    margin-top: clamp(28px,5vw,48px);
+    align-items: center;
+  }
+  .score-side {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:clamp(12px,2.5vw,16px);
+    padding: clamp(12px,2.5vw,20px) clamp(10px,2vw,16px);
+    text-align:center; backdrop-filter:blur(12px);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .score-side.active-side { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 8px 30px rgba(108,99,255,0.2); }
+  .score-label { font-size:clamp(0.55rem,1.4vw,0.65rem); letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:clamp(4px,1vw,8px); }
+  .score-name  { font-size:clamp(0.75rem,2vw,0.9rem); font-weight:700; margin-bottom:clamp(6px,1.5vw,12px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .score-val   { font-size:clamp(2rem,6vw,3rem); font-weight:800; line-height:1; background:linear-gradient(135deg,#fff,rgba(255,255,255,0.7)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .score-wins  { font-size:clamp(0.55rem,1.3vw,0.65rem); color:var(--muted); margin-top:clamp(3px,0.8vw,6px); }
+  .vs-badge    {
+    font-size:clamp(0.6rem,1.5vw,0.75rem); font-weight:800; color:var(--muted);
+    background:var(--surface); border:1px solid var(--border); border-radius:99px;
+    width: clamp(36px,7vw,44px); height:clamp(36px,7vw,44px);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+
+  /* ════════════════════════════════════════════
+     ROUND COUNTER
+  ════════════════════════════════════════════ */
+  .round-info {
+    margin-top:clamp(12px,2.5vw,20px);
+    text-align:center; font-size:clamp(0.6rem,1.6vw,0.7rem);
+    color:var(--muted); font-family:'Syne Mono',monospace; letter-spacing:0.1em;
+  }
+  .round-dots { display:flex; gap:clamp(4px,1vw,6px); justify-content:center; margin-top:clamp(6px,1.5vw,10px); flex-wrap:wrap; }
+  .round-dot  {
+    width: clamp(6px,1.5vw,8px); height:clamp(6px,1.5vw,8px);
+    border-radius:99px; background:var(--border2); transition:all 0.3s;
+  }
+  .round-dot.p1w { background:var(--win);  box-shadow:0 0 8px var(--win); }
+  .round-dot.p2w { background:var(--lose); box-shadow:0 0 8px var(--lose); }
+  .round-dot.drw { background:var(--draw); box-shadow:0 0 8px var(--draw); }
+
+  /* ════════════════════════════════════════════
+     TURN INDICATOR
+  ════════════════════════════════════════════ */
+  .turn-indicator {
+    margin-top:clamp(12px,2.5vw,20px);
+    padding: clamp(8px,1.5vw,10px) clamp(16px,3vw,24px);
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:99px;
+    font-size:clamp(0.68rem,1.7vw,0.75rem); font-weight:600;
+    color:var(--text); letter-spacing:0.06em; transition:all 0.3s;
+    text-align:center; max-width:100%;
+  }
+
+  /* ════════════════════════════════════════════
+     CHOICE BUTTONS
+  ════════════════════════════════════════════ */
+  .choices-area {
+    width:100%; margin-top:clamp(20px,4vw,36px);
+  }
+  .choices-label {
+    text-align:center; font-size:clamp(0.58rem,1.4vw,0.65rem); color:var(--muted);
+    letter-spacing:0.15em; text-transform:uppercase; margin-bottom:clamp(12px,2.5vw,20px);
+    font-family:'Syne Mono',monospace;
+  }
+  .choices-grid {
+    display:flex; justify-content:center;
+    gap: clamp(10px,2.5vw,16px);
+    flex-wrap: wrap;
+  }
+
+  /* Fluid choice button – scales from 90px (tiny phone) to 140px (desktop) */
+  .choice-btn {
+    width:  clamp(90px,  26vw, 140px);
+    height: clamp(90px,  26vw, 140px);
+    background:var(--surface);
+    border:2px solid var(--border);
+    border-radius:clamp(16px,4vw,24px);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    backdrop-filter:blur(12px);
+    position:relative; overflow:hidden;
+    user-select:none; touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .choice-btn::before {
+    content:''; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(135deg, var(--cc1,#6c63ff), var(--cc2,#a78bfa));
+    opacity:0; transition:opacity 0.3s;
+  }
+  .choice-btn:hover  { transform:translateY(-10px) scale(1.05); border-color:var(--border2); box-shadow:0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px var(--border2); }
+  .choice-btn:hover::before { opacity:0.1; }
+  .choice-btn:active { transform:scale(0.93); }
+  .choice-btn.disabled  { opacity:0.35; pointer-events:none; }
+  .choice-btn.selected  { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent), 0 12px 40px rgba(108,99,255,0.3); }
+  .choice-btn.selected::before { opacity:0.12; }
+
+  .choice-emoji { font-size:clamp(2rem,6vw,3rem); position:relative; z-index:1; }
+  .choice-label { font-size:clamp(0.55rem,1.4vw,0.6rem); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-top:clamp(4px,1vw,8px); position:relative; z-index:1; transition:color 0.2s; }
+  .choice-btn:hover .choice-label { color:var(--text); }
+
+  .choice-rock     { --cc1:#6c63ff; --cc2:#a78bfa; }
+  .choice-paper    { --cc1:#43e97b; --cc2:#38f9d7; }
+  .choice-scissors { --cc1:#f7b731; --cc2:#ff6584; }
+
+  /* ════════════════════════════════════════════
+     RESULT BANNER
+  ════════════════════════════════════════════ */
+  .result-banner {
+    width:100%; margin-top:clamp(16px,3vw,28px);
+    border-radius:clamp(12px,3vw,16px);
+    padding:clamp(14px,3vw,20px) clamp(16px,4vw,24px);
+    text-align:center; backdrop-filter:blur(12px);
+    border:1px solid var(--border);
+    transition:all 0.4s; opacity:0; transform:translateY(10px);
+    pointer-events:none; overflow:hidden;
+  }
+  .result-banner.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+  .result-banner.win  { background:rgba(67,233,123,0.1);  border-color:var(--win); }
+  .result-banner.lose { background:rgba(255,101,132,0.1); border-color:var(--lose); }
+  .result-banner.draw { background:rgba(247,183,49,0.1);  border-color:var(--draw); }
+
+  .result-emoji  { font-size:clamp(1.4rem,4vw,2rem); margin-bottom:clamp(4px,1vw,6px); }
+  .result-title  { font-size:clamp(1rem,3vw,1.3rem); font-weight:800; margin-bottom:clamp(4px,1vw,6px); }
+  .result-detail { font-size:clamp(0.65rem,1.6vw,0.75rem); color:var(--muted); letter-spacing:0.06em; }
+  .result-title.win  { color:var(--win); }
+  .result-title.lose { color:var(--lose); }
+  .result-title.draw { color:var(--draw); }
+
+  @keyframes shine {
+    from { opacity:0; transform:translateX(-100%) skewX(-15deg); }
+    to   { opacity:0.15; transform:translateX(300%) skewX(-15deg); }
+  }
+  .result-banner.show::after {
+    content:''; position:absolute;
+    top:0; left:0; width:60%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+    animation:shine 0.6s ease-out; pointer-events:none;
+  }
+
+  /* ════════════════════════════════════════════
+     REVEAL AREA
+  ════════════════════════════════════════════ */
+  .reveal-area {
+    display:flex; gap:clamp(10px,3vw,20px);
+    justify-content:center; align-items:center;
+    margin-top:clamp(8px,2vw,16px); flex-wrap:wrap;
+  }
+  .reveal-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:clamp(10px,2.5vw,16px);
+    padding:clamp(10px,2vw,16px) clamp(14px,3vw,24px);
+    text-align:center; min-width:clamp(72px,18vw,100px);
+    backdrop-filter:blur(12px);
+  }
+  .reveal-card .rc-who   { font-size:clamp(0.52rem,1.3vw,0.6rem); color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:clamp(4px,1vw,8px); font-family:'Syne Mono',monospace; }
+  .reveal-card .rc-choice{ font-size:clamp(1.6rem,5vw,2.4rem); }
+  .reveal-card .rc-label { font-size:clamp(0.55rem,1.4vw,0.65rem); font-weight:700; margin-top:clamp(2px,0.5vw,4px); text-transform:uppercase; letter-spacing:0.08em; }
+  .reveal-vs { font-size:clamp(0.65rem,1.6vw,0.75rem); font-weight:800; color:var(--muted); }
+
+  /* ════════════════════════════════════════════
+     PVP PASS SCREEN
+  ════════════════════════════════════════════ */
+  .hidden-screen { width:100%; text-align:center; margin-top:clamp(32px,6vw,48px); }
+  .hidden-screen .hs-icon  { font-size:clamp(3.5rem,10vw,5rem); margin-bottom:clamp(14px,3vw,20px); animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+  .hidden-screen .hs-title { font-size:clamp(1.1rem,3.5vw,1.4rem); font-weight:800; margin-bottom:clamp(8px,2vw,10px); }
+  .hidden-screen .hs-sub   { font-size:clamp(0.72rem,1.8vw,0.8rem); color:var(--muted); line-height:1.7; }
+
+  /* ════════════════════════════════════════════
+     FINAL SCREEN
+  ════════════════════════════════════════════ */
+  .final-screen { text-align:center; width:100%; margin-top:clamp(32px,6vw,56px); }
+  .final-trophy { font-size:clamp(3.5rem,10vw,5rem); margin-bottom:clamp(16px,3vw,24px); animation:trophyPop 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes trophyPop { from{transform:scale(0) rotate(-20deg);opacity:0;} to{transform:scale(1) rotate(0);opacity:1;} }
+  .final-title  { font-size:clamp(1.4rem,5vw,2rem); font-weight:800; margin-bottom:clamp(6px,1.5vw,8px); }
+  .final-winner { font-size:clamp(0.8rem,2vw,1.1rem); color:var(--muted); margin-bottom:clamp(20px,4vw,32px); line-height:1.6; }
+  .final-winner strong { color:var(--text); }
+
+  .final-stats {
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:clamp(8px,2vw,12px); width:100%; margin-bottom:clamp(24px,4vw,36px);
+  }
+  .fs-card { background:var(--surface); border:1px solid var(--border); border-radius:clamp(10px,2.5vw,14px); padding:clamp(12px,2.5vw,18px) clamp(8px,1.5vw,12px); text-align:center; }
+  .fs-card .fsc-val   { font-size:clamp(1.5rem,4vw,2rem); font-weight:800; }
+  .fs-card .fsc-label { font-size:clamp(0.55rem,1.3vw,0.6rem); color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-top:4px; }
+
+  /* ════════════════════════════════════════════
+     TOAST
+  ════════════════════════════════════════════ */
+  .toast {
+    position:fixed; bottom:clamp(16px,4vw,32px); left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--surface2); border:1px solid var(--border2);
+    padding:clamp(10px,2vw,12px) clamp(16px,3vw,24px);
+    border-radius:99px;
+    font-size:clamp(0.72rem,1.8vw,0.8rem); font-weight:600; letter-spacing:0.04em;
+    backdrop-filter:blur(16px); z-index:999;
+    opacity:0; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    white-space:nowrap; pointer-events:none;
+    max-width:calc(100vw - 40px); text-align:center;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ════════════════════════════════════════════
+     PARTICLES
+  ════════════════════════════════════════════ */
+  .particle {
+    position:fixed; pointer-events:none; z-index:998;
+    border-radius:50%;
+    animation:particleFly 1s ease-out forwards;
+    will-change:transform;
+  }
+  @keyframes particleFly {
+    0%   { opacity:1; transform:translate(0,0) scale(1); }
+    100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0.2); }
+  }
+
+  /* ════════════════════════════════════════════
+     CHOICE ANIMATE-IN
+  ════════════════════════════════════════════ */
+  .choice-btn { animation:choicePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+  .choice-btn:nth-child(1){ animation-delay:0.05s; }
+  .choice-btn:nth-child(2){ animation-delay:0.12s; }
+  .choice-btn:nth-child(3){ animation-delay:0.19s; }
+  @keyframes choicePop {
+    from { opacity:0; transform:translateY(20px) scale(0.85); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+
+  /* ════════════════════════════════════════════
+     ┌─────────────────────────────────────┐
+     │  RESPONSIVE BREAKPOINTS             │
+     └─────────────────────────────────────┘
+
+     Strategy:
+     • xs  < 360px  – tiny/budget phones
+     • sm  < 480px  – standard phones (portrait)
+     • md  < 640px  – large phones / small tablets (portrait)
+     • lg  < 900px  – tablets (portrait / small landscape)
+     • xl  ≥ 900px  – tablets landscape + desktops (base styles handle)
+     • 2xl ≥ 1200px – large desktops (increase density slightly)
+  ════════════════════════════════════════════ */
+
+  /* ── XS: very small phones (< 360px) ── */
+  @media (max-width: 359px) {
+    .choice-btn { width: 82px; height: 82px; }
+    .choices-grid { gap: 8px; }
+    .mode-grid { gap: 8px; }
+    .scoreboard { gap: 6px; }
+    .vs-badge { width: 32px; height: 32px; font-size: 0.55rem; }
+    .btn-row { gap: 6px; }
+    .hero-h1 { font-size: 1.9rem; }
+    .hero-sub { font-size: 0.7rem; }
+    .quit-modal { padding: 24px 16px 20px; }
+  }
+
+  /* ── SM: standard phones portrait (< 480px) ── */
+  @media (max-width: 479px) {
+    /* Mode cards: stack to single column on tiny screens */
+    .mode-grid { grid-template-columns: 1fr 1fr; } /* keep 2-col, just smaller padding */
+
+    /* Tighten scoreboard text */
+    .score-name { font-size: 0.72rem; }
+
+    /* Make choice grid fill full width evenly */
+    .choices-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      width: 100%;
+      gap: 10px;
+    }
+    .choice-btn {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+    }
+
+    /* Reveal area */
+    .reveal-area { gap: 8px; }
+    .reveal-card { padding: 10px 12px; min-width: 64px; }
+
+    /* Final screen stats */
+    .final-stats { gap: 8px; }
+
+    /* Pass screen */
+    .hidden-screen { margin-top: 28px; }
+
+    /* Btn row */
+    .btn-row { gap: 8px; }
+  }
+
+  /* ── MD: large phones / small tablets portrait (< 640px) ── */
+  @media (max-width: 639px) {
+    .app { padding: 0 14px 28px; }
+
+    /* On very short viewports (landscape phone), make things compact */
+    @media (max-height: 500px) {
+      .hero-title   { margin-top: 16px; }
+      .weapon-parade { margin: 16px 0 4px; }
+      .mode-grid    { margin-top: 16px; }
+      .scoreboard   { margin-top: 14px; }
+      .choices-area { margin-top: 12px; }
+      .round-info   { margin-top: 8px; }
+      .turn-indicator { margin-top: 8px; padding: 6px 16px; }
+      .result-banner  { margin-top: 10px; }
+      .btn-row        { margin-top: 12px; }
+      .wp-item        { font-size: 1.6rem; }
+    }
+  }
+
+  /* ── LG: tablets portrait & small landscape (< 900px) ── */
+  @media (min-width: 640px) and (max-width: 899px) {
+    .app { padding: 0 24px 40px; }
+
+    .mode-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+    .mode-card { padding: 28px 20px; }
+
+    .choices-grid { gap: 18px; }
+    .choice-btn   { width: 130px; height: 130px; }
+
+    .score-val    { font-size: 2.6rem; }
+
+    /* On landscape tablets, use a side-by-side game layout */
+    @media (orientation: landscape) and (max-height: 620px) {
+      #screenGame { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 0 24px; }
+      .scoreboard  { margin-top: 20px; grid-column: 1 / -1; }
+      .round-info  { grid-column: 1 / -1; }
+      .round-dots  { grid-column: 1 / -1; }
+      .turn-indicator { width: 100%; }
+      .choices-area   { flex: 1; margin-top: 14px; }
+      .result-banner  { flex: 1; margin-top: 14px; align-self: flex-start; }
+      .btn-row        { width: 100%; }
+    }
+  }
+
+  /* ── XL: desktop (≥ 900px) ── */
+  @media (min-width: 900px) {
+    .app { padding: 0 32px 56px; }
+
+    /* Side-by-side mode cards already handled by default 2-col grid */
+    .mode-grid { gap: 18px; }
+
+    /* Scoreboard: give a bit more padding on desktop */
+    .score-side { padding: 22px 20px; }
+
+    /* Choice buttons: comfortable desktop sizing */
+    .choices-grid { gap: 20px; }
+    .choice-btn   { width: 140px; height: 140px; }
+
+    /* Hover effects feel better with mouse, re-enable */
+    .choice-btn:hover { transform: translateY(-12px) scale(1.06); }
+  }
+
+  /* ── 2XL: large desktops (≥ 1200px) ── */
+  @media (min-width: 1200px) {
+    .app { max-width: 900px; margin: 0 auto; padding: 0 0 56px; }
+    .header, .screen { max-width: 800px; }
+  }
+
+  /* ════════════════════════════════════════════
+     LANDSCAPE PHONE (special compact mode)
+     Height < 450px, width > height
+  ════════════════════════════════════════════ */
+  @media (max-height: 450px) and (orientation: landscape) {
+    .hero-title   { margin-top: 10px; }
+    .weapon-parade { margin: 10px 0 2px; }
+    .weapon-parade .wp-item { font-size: 1.5rem; }
+    .mode-grid    { margin-top: 10px; }
+
+    .scoreboard   { margin-top: 8px; }
+    .score-val    { font-size: 1.6rem; }
+    .score-side   { padding: 8px 10px; }
+    .vs-badge     { width: 30px; height: 30px; }
+
+    .choices-area    { margin-top: 8px; }
+    .choices-label   { margin-bottom: 8px; }
+    .choice-btn      { width: 78px; height: 78px; border-radius: 14px; }
+    .choice-emoji    { font-size: 1.7rem; }
+    .choice-label    { font-size: 0.5rem; margin-top: 4px; }
+
+    .turn-indicator  { margin-top: 8px; padding: 6px 14px; font-size: 0.62rem; }
+    .round-info      { margin-top: 6px; }
+    .result-banner   { margin-top: 8px; padding: 10px 14px; }
+    .result-emoji    { font-size: 1rem; }
+    .result-title    { font-size: 0.9rem; }
+    .btn-row         { margin-top: 10px; }
+
+    .hidden-screen .hs-icon  { font-size: 2.5rem; margin-bottom: 8px; }
+    .hidden-screen .hs-title { font-size: 1rem; }
+
+    .final-screen    { margin-top: 10px; }
+    .final-trophy    { font-size: 2.5rem; margin-bottom: 10px; }
+    .final-title     { font-size: 1.2rem; }
+  }
+
+  /* ════════════════════════════════════════════
+     ACCESSIBILITY & PREFERENCES
+  ════════════════════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+    .orb, .wp-item, .hidden-screen .hs-icon { animation: none !important; }
+  }
+
+  /* High-contrast focus indicators for keyboard nav */
+  .btn:focus-visible,
+  .choice-btn:focus-visible,
+  .mode-card:focus-visible,
+  .btn-quit-confirm:focus-visible,
+  .btn-quit-cancel:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* Touch: prevent the 300ms delay on iOS */
+  a, button, [role="button"], .choice-btn, .mode-card, .btn { touch-action: manipulation; }
+
+</style>
+</head>
+<body>
+
+<div class="bg-canvas"></div>
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ══ QUIT CONFIRMATION MODAL ══ -->
+<div class="quit-overlay" id="quitOverlay" onclick="handleOverlayClick(event)">
+  <div class="quit-modal" id="quitModal">
+    <span class="quit-modal-icon">🚪</span>
+    <div class="quit-modal-title">Quit to Menu?</div>
+    <div class="quit-modal-sub">Your current game progress will be lost.</div>
+    <div class="quit-score-preview" id="quitScorePreview">
+      <div class="qsp-side">
+        <div class="qsp-name" id="qspP1Name">You</div>
+        <div class="qsp-score p1c" id="qspP1Score">0</div>
+      </div>
+      <div class="qsp-divider">VS</div>
+      <div class="qsp-side">
+        <div class="qsp-name" id="qspP2Name">AI</div>
+        <div class="qsp-score p2c" id="qspP2Score">0</div>
+      </div>
+    </div>
+    <div class="quit-modal-btns">
+      <button class="btn-quit-confirm" onclick="quitToMenu()">Yes, Quit to Menu</button>
+      <button class="btn-quit-cancel"  onclick="closeQuitModal()">Cancel — Keep Playing</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">RPS</div>
+    <div class="header-badge" id="headerBadge">SELECT MODE</div>
+  </header>
+
+  <!-- ══ SCREEN 1: HOME ══ -->
+  <div class="screen" id="screenHome">
+    <div class="hero-title">
+      <div class="hero-eyebrow">The Classic Game</div>
+      <h1 class="hero-h1">
+        <span class="word-rock">Rock</span>
+        <span class="word-paper">Paper</span>
+        <span class="word-scissors">Scissors</span>
+      </h1>
+      <p class="hero-sub">Fast. Fair. Addictive.<br>Pick your mode and play.</p>
+    </div>
+
+    <div class="weapon-parade">
+      <span class="wp-item">🪨</span>
+      <span class="wp-item">📄</span>
+      <span class="wp-item">✂️</span>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode-card pvai" onclick="startPvAI()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')startPvAI()">
+        <span class="mc-icon">🤖</span>
+        <div class="mc-title">vs AI</div>
+        <div class="mc-desc">Challenge an intelligent AI that learns and counters your moves</div>
+      </div>
+      <div class="mode-card pvp" onclick="startPvP()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')startPvP()">
+        <span class="mc-icon">👥</span>
+        <div class="mc-title">vs Player</div>
+        <div class="mc-desc">Pass and play with a friend on the same device</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3: GAME ══ -->
+  <div class="screen hidden" id="screenGame">
+
+    <div class="scoreboard" id="scoreboard">
+      <div class="score-side" id="scoreLeft">
+        <div class="score-label">Player</div>
+        <div class="score-name" id="p1Name">You</div>
+        <div class="score-val"  id="p1Score">0</div>
+        <div class="score-wins" id="p1Wins">0 wins</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="score-side" id="scoreRight">
+        <div class="score-label">Opponent</div>
+        <div class="score-name" id="p2Name">AI</div>
+        <div class="score-val"  id="p2Score">0</div>
+        <div class="score-wins" id="p2Wins">0 wins</div>
+      </div>
+    </div>
+
+    <div class="round-info">
+      ROUND <span id="roundNum">1</span> of <span id="roundMax">7</span>
+    </div>
+    <div class="round-dots" id="roundDots"></div>
+
+    <div class="turn-indicator" id="turnIndicator">Your turn — pick a weapon</div>
+
+    <div class="choices-area" id="choicesArea">
+      <div class="choices-label" id="choicesLabel">Choose your weapon</div>
+      <div class="choices-grid" id="choicesGrid">
+        <div class="choice-btn choice-rock"     onclick="playerMove('rock')"     data-choice="rock"     role="button" tabindex="0" aria-label="Rock">
+          <span class="choice-emoji">🪨</span>
+          <span class="choice-label">Rock</span>
+        </div>
+        <div class="choice-btn choice-paper"    onclick="playerMove('paper')"    data-choice="paper"    role="button" tabindex="0" aria-label="Paper">
+          <span class="choice-emoji">📄</span>
+          <span class="choice-label">Paper</span>
+        </div>
+        <div class="choice-btn choice-scissors" onclick="playerMove('scissors')" data-choice="scissors" role="button" tabindex="0" aria-label="Scissors">
+          <span class="choice-emoji">✂️</span>
+          <span class="choice-label">Scissors</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-banner" id="resultBanner">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div class="reveal-area"  id="revealArea"></div>
+      <div class="result-title" id="resultTitle">You Win!</div>
+      <div class="result-detail" id="resultDetail">Rock crushes Scissors</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="confirmBack()">← Menu</button>
+      <button class="btn btn-ghost" onclick="resetGame()">↺ Restart</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4: PVP PASS ══ -->
+  <div class="screen hidden" id="screenPass">
+    <div class="hidden-screen">
+      <div class="hs-icon">🙈</div>
+      <div class="hs-title" id="passTitle">Pass to Player 2</div>
+      <div class="hs-sub"   id="passSub">Don't let them see your choice!<br>Hand the device to your opponent.</div>
+    </div>
+    <div class="btn-row" style="margin-top:clamp(24px,5vw,36px); flex-direction:column; align-items:center;">
+      <button class="btn btn-primary" id="passBtn" onclick="passReady()">I'm Ready →</button>
+      <button class="btn btn-ghost"   style="margin-top:4px;" onclick="confirmBack()">← Menu</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 5: FINAL ══ -->
+  <div class="screen hidden" id="screenFinal">
+    <div class="final-screen">
+      <div class="final-trophy" id="finalTrophy">🏆</div>
+      <div class="final-title"  id="finalTitle">Game Over!</div>
+      <div class="final-winner" id="finalWinner">Player 1 wins the match!</div>
+      <div class="final-stats"  id="finalStats"></div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn btn-ghost"   onclick="showScreen('screenHome'); resetAll()">← Menu</button>
+        <button class="btn btn-primary" onclick="rematch()">Rematch →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+const TOTAL_ROUNDS = 7;
+let mode = 'pvai';
+let difficulty = 'hard';
+let scores = { p1:0, p2:0, draws:0 };
+let round = 1;
+let roundResults = [];
+let aiHistory = {};
+let pvpP1Choice = null;
+let pvpP2Phase = false;
+let gameEnded = false;
+let lastSettings = {};
+
+const EMOJIS    = { rock:'🪨', paper:'📄', scissors:'✂️' };
+const LABELS    = { rock:'Rock', paper:'Paper', scissors:'Scissors' };
+const BEATS     = { rock:'scissors', paper:'rock', scissors:'paper' };
+const BEATS_MSG = { rock:'Rock crushes Scissors', paper:'Paper covers Rock', scissors:'Scissors cuts Paper' };
+
+// ── AUDIO ──
+let actx;
+function getACtx(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function playSound(freq, type='sine', dur=0.15, vol=0.18){
+  try {
+    const ac = getACtx();
+    const osc = ac.createOscillator(), gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    osc.start(); osc.stop(ac.currentTime + dur);
+  } catch(e){}
+}
+function sfxClick()  { playSound(600,'sine',0.08,0.12); }
+function sfxWin()    { playSound(880,'sine',0.1,0.2); setTimeout(()=>playSound(1100,'sine',0.15,0.2),100); setTimeout(()=>playSound(1320,'sine',0.2,0.25),200); }
+function sfxLose()   { playSound(250,'sawtooth',0.3,0.15); }
+function sfxDraw()   { playSound(440,'triangle',0.2,0.15); }
+function sfxSelect() { playSound(500,'sine',0.07,0.1); }
+function sfxModal()  { playSound(320,'sine',0.12,0.1); }
+
+// ── SCREENS ──
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  const badges = {
+    screenHome:  'SELECT MODE',
+    screenGame:  mode==='pvp' ? 'PVP MODE' : 'AI MODE',
+    screenPass:  'PASS DEVICE',
+    screenFinal: 'GAME OVER'
+  };
+  document.getElementById('headerBadge').textContent = badges[id] || '';
+  // Scroll to top on screen change (mobile)
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── QUIT MODAL ──
+function confirmBack(){
+  sfxModal();
+  document.getElementById('qspP1Name').textContent  = mode==='pvp' ? 'Player 1' : 'You';
+  document.getElementById('qspP2Name').textContent  = mode==='pvp' ? 'Player 2' : 'AI';
+  document.getElementById('qspP1Score').textContent = scores.p1;
+  document.getElementById('qspP2Score').textContent = scores.p2;
+  openQuitModal();
+}
+function openQuitModal(){
+  const overlay = document.getElementById('quitOverlay');
+  overlay.classList.add('show');
+  setTimeout(()=>{ overlay.querySelector('.btn-quit-cancel').focus(); }, 350);
+}
+function closeQuitModal(){
+  sfxClick();
+  document.getElementById('quitOverlay').classList.remove('show');
+}
+function quitToMenu(){
+  sfxClick();
+  closeQuitModal();
+  setTimeout(()=>{ resetAll(); showScreen('screenHome'); }, 200);
+}
+function handleOverlayClick(e){
+  if(e.target === document.getElementById('quitOverlay')) closeQuitModal();
+}
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && document.getElementById('quitOverlay').classList.contains('show')) closeQuitModal();
+});
+
+// Keyboard support for choice buttons
+document.addEventListener('keydown', e=>{
+  if(['Enter',' '].includes(e.key)){
+    const el = document.activeElement;
+    if(el && el.classList.contains('choice-btn') && !el.classList.contains('disabled')){
+      e.preventDefault();
+      playerMove(el.dataset.choice);
+    }
+  }
+});
+
+// ── START GAMES ──
+function startPvAI(){
+  sfxClick(); mode='pvai'; difficulty='hard'; lastSettings={mode,difficulty};
+  resetAll();
+  document.getElementById('p1Name').textContent = 'You';
+  document.getElementById('p2Name').textContent = 'AI';
+  buildRoundDots(); updateScoreboard(); setChoicesEnabled(true);
+  document.getElementById('turnIndicator').textContent = 'Your turn — pick a weapon';
+  document.getElementById('choicesLabel').textContent  = 'Choose your weapon';
+  showScreen('screenGame');
+}
+function startPvP(){
+  sfxClick(); mode='pvp'; lastSettings={mode};
+  resetAll();
+  document.getElementById('p1Name').textContent = 'Player 1';
+  document.getElementById('p2Name').textContent = 'Player 2';
+  buildRoundDots(); updateScoreboard();
+  pvpP2Phase=false; pvpP1Choice=null;
+  showPvPChoiceScreen(); showScreen('screenGame');
+}
+
+// ── RESET ──
+function resetAll(){
+  scores={p1:0,p2:0,draws:0}; round=1; roundResults=[];
+  aiHistory={rock:0,paper:0,scissors:0};
+  pvpP1Choice=null; pvpP2Phase=false; gameEnded=false;
+  hideResult();
+}
+function resetGame(){
+  sfxClick(); resetAll(); buildRoundDots(); updateScoreboard();
+  if(mode==='pvp'){ pvpP2Phase=false; pvpP1Choice=null; showPvPChoiceScreen(); }
+  else { setChoicesEnabled(true); document.getElementById('turnIndicator').textContent='Your turn — pick a weapon'; document.getElementById('choicesLabel').textContent='Choose your weapon'; }
+  hideResult(); showScreen('screenGame');
+}
+
+// ── PVP FLOW ──
+function showPvPChoiceScreen(){
+  const label = pvpP2Phase ? 'Player 2' : 'Player 1';
+  document.getElementById('turnIndicator').textContent = `${label} — pick your weapon`;
+  document.getElementById('choicesLabel').textContent  = `${label}'s choice`;
+  setChoicesEnabled(true); clearChoiceHighlight();
+}
+
+// ── PLAYER MOVE ──
+function playerMove(choice){
+  if(gameEnded) return;
+  sfxSelect();
+  if(mode==='pvai'){
+    setChoicesEnabled(false); highlightChoice(choice);
+    const aiChoice = getAIMove(choice);
+    aiHistory[choice] = (aiHistory[choice]||0) + 1;
+    setTimeout(()=>{ resolveRound(choice, aiChoice); }, 600);
+  } else {
+    if(!pvpP2Phase){
+      pvpP1Choice=choice; pvpP2Phase=true;
+      setChoicesEnabled(false); highlightChoice(choice);
+      setTimeout(()=>{
+        document.getElementById('passTitle').textContent = 'Pass to Player 2';
+        document.getElementById('passSub').textContent   = "Don't peek! Hand the device to Player 2.";
+        document.getElementById('passBtn').textContent   = "I'm Ready →";
+        showScreen('screenPass');
+      }, 500);
+    } else {
+      const p2Choice = choice;
+      setChoicesEnabled(false); highlightChoice(choice);
+      setTimeout(()=>{ resolveRound(pvpP1Choice, p2Choice); pvpP2Phase=false; pvpP1Choice=null; }, 400);
+    }
+  }
+}
+function passReady(){
+  sfxClick(); showScreen('screenGame'); showPvPChoiceScreen(); hideResult();
+}
+
+// ── AI LOGIC ──
+function getAIMove(playerChoice){
+  if(difficulty==='easy') return randomMove();
+  else if(difficulty==='medium') return Math.random()<0.5 ? counterMove(playerChoice) : randomMove();
+  else {
+    const freq=aiHistory, total=Object.values(freq).reduce((a,b)=>a+b,0);
+    if(total<2) return randomMove();
+    const predicted=Object.keys(freq).reduce((a,b)=>freq[a]>freq[b]?a:b);
+    return counterOf(predicted);
+  }
+}
+function randomMove(){ return ['rock','paper','scissors'][Math.floor(Math.random()*3)]; }
+function counterMove(move){ return counterOf(move); }
+function counterOf(move){ return Object.keys(BEATS).find(k=>BEATS[k]===move); }
+
+// ── RESOLVE ROUND ──
+function resolveRound(p1,p2){
+  let winner;
+  if(p1===p2) winner='draw';
+  else if(BEATS[p1]===p2) winner='p1';
+  else winner='p2';
+
+  if(winner==='p1')     { scores.p1++; roundResults.push('p1w'); sfxWin(); }
+  else if(winner==='p2'){ scores.p2++; roundResults.push('p2w'); sfxLose(); }
+  else                  { scores.draws++; roundResults.push('drw'); sfxDraw(); }
+
+  updateScoreboard(); updateRoundDots(); showResult(p1,p2,winner); spawnParticles(winner);
+
+  const half=Math.ceil(TOTAL_ROUNDS/2);
+  const gameOver = scores.p1>=half || scores.p2>=half || round>=TOTAL_ROUNDS;
+
+  if(gameOver){
+    gameEnded=true;
+    setTimeout(()=>showFinalScreen(), 2200);
+  } else {
+    round++;
+    document.getElementById('roundNum').textContent = round;
+    setTimeout(()=>{
+      hideResult(); clearChoiceHighlight();
+      if(mode==='pvp'){ pvpP2Phase=false; pvpP1Choice=null; showPvPChoiceScreen(); showScreen('screenGame'); }
+      else { setChoicesEnabled(true); document.getElementById('turnIndicator').textContent='Your turn — pick a weapon'; document.getElementById('choicesLabel').textContent='Choose your weapon'; }
+    }, 2200);
+  }
+}
+
+// ── SHOW / HIDE RESULT ──
+function showResult(p1,p2,winner){
+  const banner=document.getElementById('resultBanner');
+  const emoji=document.getElementById('resultEmoji');
+  const title=document.getElementById('resultTitle');
+  const detail=document.getElementById('resultDetail');
+  const reveal=document.getElementById('revealArea');
+  banner.className='result-banner'; title.className='result-title';
+  const p1L=mode==='pvp'?'Player 1':'You', p2L=mode==='pvp'?'Player 2':'AI';
+  reveal.innerHTML=`
+    <div class="reveal-card"><div class="rc-who">${p1L}</div><div class="rc-choice">${EMOJIS[p1]}</div><div class="rc-label">${LABELS[p1]}</div></div>
+    <div class="reveal-vs">VS</div>
+    <div class="reveal-card"><div class="rc-who">${p2L}</div><div class="rc-choice">${EMOJIS[p2]}</div><div class="rc-label">${LABELS[p2]}</div></div>
+  `;
+  if(winner==='draw'){
+    emoji.textContent='🤝'; title.textContent='Draw!'; title.classList.add('draw');
+    detail.textContent=`Both chose ${LABELS[p1]}`; banner.classList.add('draw');
+  } else if(winner==='p1'){
+    emoji.textContent='🎉'; title.textContent=mode==='pvp'?'Player 1 Wins!':'You Win!'; title.classList.add('win');
+    detail.textContent=BEATS_MSG[p1]; banner.classList.add('win');
+  } else {
+    emoji.textContent='😤'; title.textContent=mode==='pvp'?'Player 2 Wins!':'AI Wins!'; title.classList.add('lose');
+    detail.textContent=BEATS_MSG[p2]; banner.classList.add('lose');
+  }
+  requestAnimationFrame(()=> banner.classList.add('show'));
+}
+function hideResult(){ document.getElementById('resultBanner').classList.remove('show'); }
+
+// ── SCOREBOARD ──
+function updateScoreboard(){
+  document.getElementById('p1Score').textContent = scores.p1;
+  document.getElementById('p2Score').textContent = scores.p2;
+  document.getElementById('p1Wins').textContent  = `${scores.p1} win${scores.p1!==1?'s':''}`;
+  document.getElementById('p2Wins').textContent  = `${scores.p2} win${scores.p2!==1?'s':''}`;
+  document.getElementById('roundNum').textContent= round;
+  document.getElementById('roundMax').textContent= TOTAL_ROUNDS;
+  const sl=document.getElementById('scoreLeft'), sr=document.getElementById('scoreRight');
+  sl.classList.remove('active-side'); sr.classList.remove('active-side');
+  if(scores.p1>scores.p2) sl.classList.add('active-side');
+  else if(scores.p2>scores.p1) sr.classList.add('active-side');
+}
+
+// ── ROUND DOTS ──
+function buildRoundDots(){
+  const el=document.getElementById('roundDots'); el.innerHTML='';
+  for(let i=0;i<TOTAL_ROUNDS;i++){
+    const d=document.createElement('div');
+    d.className='round-dot'; d.id=`dot-${i}`; el.appendChild(d);
+  }
+}
+function updateRoundDots(){
+  roundResults.forEach((r,i)=>{
+    const d=document.getElementById(`dot-${i}`);
+    if(d) d.className='round-dot '+r;
+  });
+}
+
+// ── CHOICES ──
+function setChoicesEnabled(on){
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.classList.toggle('disabled',!on);
+    b.setAttribute('tabindex', on ? '0' : '-1');
+  });
+}
+function highlightChoice(choice){
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    if(b.dataset.choice===choice) b.classList.add('selected');
+    else b.classList.add('disabled');
+  });
+}
+function clearChoiceHighlight(){
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected','disabled'));
+}
+
+// ── PARTICLES ──
+function spawnParticles(winner){
+  const colors=winner==='p1'?['#43e97b','#38f9d7','#fff']:winner==='p2'?['#ff6584','#f7b731','#fff']:['#f7b731','#fff','#a78bfa'];
+  const count = window.matchMedia('(max-width:480px)').matches ? 10 : 18;
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div'); p.className='particle';
+    const size=4+Math.random()*8;
+    p.style.cssText=`width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${20+Math.random()*60}vw;top:${30+Math.random()*30}vh;--tx:${(Math.random()-0.5)*200}px;--ty:${-80-Math.random()*150}px;animation-duration:${0.8+Math.random()*0.6}s;animation-delay:${Math.random()*0.2}s;`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),1600);
+  }
+}
+
+// ── TOAST ──
+function showToast(msg,dur=2000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ── FINAL SCREEN ──
+function showFinalScreen(){
+  const trophy=document.getElementById('finalTrophy');
+  const title=document.getElementById('finalTitle');
+  const winner=document.getElementById('finalWinner');
+  const stats=document.getElementById('finalStats');
+  const p1N=mode==='pvp'?'Player 1':'You', p2N=mode==='pvp'?'Player 2':'AI';
+  if(scores.p1>scores.p2){
+    trophy.textContent='🏆'; title.textContent=`${p1N} Win${mode!=='pvp'?'!':'s!'}`;
+    winner.innerHTML=`<strong>${p1N}</strong> dominated the match`; sfxWin();
+  } else if(scores.p2>scores.p1){
+    trophy.textContent=mode==='pvp'?'🏆':'🤖'; title.textContent=`${p2N} Wins!`;
+    winner.innerHTML=`<strong>${p2N}</strong> won the match`; sfxLose();
+  } else {
+    trophy.textContent='🤝'; title.textContent="It's a Tie!";
+    winner.innerHTML='Both players played equally well!'; sfxDraw();
+  }
+  stats.innerHTML=`
+    <div class="fs-card"><div class="fsc-val" style="color:var(--win)">${scores.p1}</div><div class="fsc-label">${p1N} wins</div></div>
+    <div class="fs-card"><div class="fsc-val" style="color:var(--draw)">${scores.draws}</div><div class="fsc-label">Draws</div></div>
+    <div class="fs-card"><div class="fsc-val" style="color:var(--lose)">${scores.p2}</div><div class="fsc-label">${p2N} wins</div></div>
+  `;
+  spawnParticles(scores.p1>=scores.p2?'p1':'p2');
+  showScreen('screenFinal');
+}
+
+function rematch(){
+  sfxClick();
+  if(lastSettings.mode==='pvp') startPvP();
+  else { difficulty='hard'; startPvAI(); }
+}
+</script>
+</body>
+</html>
